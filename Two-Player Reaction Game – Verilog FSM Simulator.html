@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two-Player Reaction Game – Verilog FSM Simulator</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f4f6f9;--card:#fff;--tx:#0f172a;--mut:#475569;--gb:#dde2ea;--ac:#2563eb;--ok:#16a34a;--bad:#dc2626;--wn:#d97706}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141b;--card:#18202b;--tx:#e6ebf2;--mut:#9aa7ba;--gb:#283342;--ac:#60a5fa;--ok:#4ade80;--bad:#f87171;--wn:#fbbf24}}
+:root[data-theme="dark"]{--bg:#0f141b;--card:#18202b;--tx:#e6ebf2;--mut:#9aa7ba;--gb:#283342;--ac:#60a5fa;--ok:#4ade80;--bad:#f87171;--wn:#fbbf24}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 12px;padding:8px 12px;background:var(--card);border:1px solid var(--gb);border-radius:12px}
+h1{font-size:16px;margin:0}h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin:0 0 6px}
+main{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;padding:0 12px 12px;max-width:1100px;margin:auto}
+.card{background:var(--card);border:1px solid var(--gb);border-radius:12px;padding:10px;min-width:0}.wide{grid-column:1/-1}
+button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--gb);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:disabled{opacity:.4;cursor:default}button.p{background:color-mix(in srgb,var(--ac) 30%,transparent);border-color:var(--ac)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.mut{color:var(--mut);font-size:12px}
+.dash{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:640px){.dash{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
+.chip{border:1px solid var(--gb);border-radius:8px;padding:5px 8px;font:600 12px ui-monospace,Menlo,monospace}.chip small{display:block;color:var(--mut);font-weight:400;font-size:10px}
+.chip.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 22%,transparent)}.chip.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,transparent)}
+.bits{display:flex;gap:4px;margin-bottom:8px}.b{flex:1;text-align:center;border:1px solid var(--gb);border-radius:6px;font:600 15px ui-monospace,monospace}.b s{display:block;text-decoration:none;font-size:9px;color:var(--mut)}.b.on{background:color-mix(in srgb,var(--ac) 35%,transparent);border-color:var(--ac)}
+.code{font:12px ui-monospace,monospace;overflow-x:auto}.ln{display:flex;gap:8px;padding:2px 6px;border-radius:6px;white-space:nowrap}.ln b{width:84px;color:var(--mut);font-weight:600}.ln span{width:104px}.ln i{color:var(--mut)}.ln em{font-style:normal;width:48px;color:var(--ac)}.ln u{text-decoration:none;width:66px;color:var(--mut)}.ln.cur{background:color-mix(in srgb,var(--ac) 35%,transparent)}
+#log{height:140px;overflow:auto;font:12px ui-monospace,monospace;color:var(--mut)}#log div{padding:2px 0;border-bottom:1px solid var(--gb)}
+#demo{display:grid;grid-template-columns:1fr 1fr;gap:6px}#demo button{text-align:left;font-size:12.5px}
+#say{margin-top:8px;font-size:13px;min-height:3.6em;font-weight:600}
+.dev{margin:0 auto;width:min(100%,310px);border:2px solid var(--gb);border-radius:14px;padding:10px;background:color-mix(in srgb,var(--tx) 6%,var(--card));transform:perspective(800px) rotateY(-10deg) rotateX(3deg);box-shadow:8px 8px 0 color-mix(in srgb,var(--tx) 10%,transparent);transition:border-color .3s}
+.lcd{background:#0c2a2a;color:#7ff5d0;border-radius:8px;padding:8px 10px;font:13px ui-monospace,monospace;box-shadow:inset 0 0 18px #000}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#dl .lamps{display:flex;gap:10px;justify-content:center;margin-bottom:8px}.lamps i{width:22px;height:22px;border-radius:50%;border:2px solid var(--gb);transition:.15s}
+.lamps i.r.on{background:var(--bad);box-shadow:0 0 16px var(--bad);border-color:var(--bad)}.lamps i.y.on{background:var(--wn);box-shadow:0 0 16px var(--wn);border-color:var(--wn)}.lamps i.g.on{background:var(--ok);box-shadow:0 0 18px var(--ok);border-color:var(--ok)}
+.foul .lamps i.r{animation:fl .3s infinite alternate}@keyframes fl{from{opacity:.4}to{opacity:1}}
+#lcd{height:70px;text-align:center}#lcd b{display:block;font-size:26px;color:#fbbf24}
+.track{margin:10px 0}.lane{position:relative;height:32px;border-bottom:2px dashed var(--gb)}.car{position:absolute;left:0;top:2px;font-size:22px;transition:left 1.4s cubic-bezier(.2,.8,.3,1)}.car.run{left:calc(100% - 56px)}.fin{position:absolute;right:0;top:4px}
+.pbs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.pb{height:62px;background:var(--c);color:#fff;border:none;border-radius:14px;font-weight:800;box-shadow:0 7px 0 color-mix(in srgb,var(--c) 55%,#000);transition:transform .08s,box-shadow .08s}
+.pb:active,.pb.dn{transform:translateY(6px);box-shadow:0 1px 0 color-mix(in srgb,var(--c) 55%,#000)}.pb small{display:block;font-weight:500;opacity:.9}
+canvas{width:100%;height:110px;display:block}.rs{font-size:13px;line-height:1.7}
+</style></head><body>
+<header><h1>⚡ Two-Player Reaction Game — Verilog FSM Simulator</h1>
+<div class="row"><span class="mut">Keys: A = Player 1 · L = Player 2 · Space = Start</span><button id="th">Theme</button><button id="rst">Reset</button></div></header>
+<main>
+<section class="card wide"><h2>Game console and controls</h2><div class="dash"><div><div class="dev" id="dev"><div class="lamps"><i class="r" id="lr"></i><i class="y" id="ly"></i><i class="g" id="lg"></i></div><div class="lcd" id="lcd"></div>
+<div class="track"><div class="lane"><span class="car" id="c0">🏎️</span><span class="fin">🏁</span></div><div class="lane"><span class="car" id="c1">🚗</span><span class="fin">🏁</span></div></div>
+<div class="pbs"><button class="pb" id="p0" style="--c:#2563eb">PLAYER 1<small>key A</small></button><button class="pb" id="p1" style="--c:#dc2626">PLAYER 2<small>key L</small></button></div></div></div>
+<div><button class="p" id="st" style="width:100%;padding:10px">▶ Start round</button><div class="grid" id="score" style="margin:8px 0"></div><div class="rs" id="rs"></div>
+<div class="mut" style="margin:6px 0 4px">Use cases (auto-demo)</div><div id="demo"></div><div id="say">Pick a use case to start.</div></div></div></section>
+<section class="card"><h2>Verilog signals</h2><div class="grid" id="sig"></div></section>
+<section class="card"><h2>Waveform (go, p1, p2, foul)</h2><canvas id="wv"></canvas></section>
+<section class="card wide"><h2>FSM — Verilog case statement</h2><div class="code" id="vc"></div></section>
+<section class="card wide"><h2>Event log</h2><div id="log"></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id),hx=v=>v.toString(16).toUpperCase().padStart(2,"0")+"H",h4=v=>v.toString(16).toUpperCase().padStart(4,"0")+"H";
+function log(t){const d=document.createElement("div");d.textContent=new Date().toLocaleTimeString()+"  "+t;$("log").prepend(d)}
+$("th").onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme=="dark":matchMedia("(prefers-color-scheme:dark)").matches;d.dataset.theme=dark?"light":"dark"};
+const ST=["IDLE","WAIT","GO","RESULT","FOUL"];
+const V=[["IDLE","if (start) begin lfsr <= next_lfsr; delay <= 2000 + lfsr*12; timer <= 0; next = WAIT; end"],["WAIT","if (p1 | p2) next = FOUL; else if (timer == delay) begin counter <= 0; next = GO; end"],["GO","begin counter <= counter + 1; if (p1 & ~lock1) begin t1 <= counter; lock1 <= 1; end if (p2 & ~lock2) begin t2 <= counter; lock2 <= 1; end if ((lock1 & lock2) | timeout) next = RESULT; end"],["RESULT","winner = (t1 < t2) ? P1 : P2;   // comparator"],["FOUL","winner = p1 ? P2 : P1;   // the early presser loses"]];
+let s,lf=0xA5,tok=0,hist=[];
+const bn=(v,n)=>v.toString(2).padStart(n,"0");
+function reset(){tok++;s={st:0,delay:0,tw:0,t0:0,cnt:0,t:[null,null],lock:[0,0],first:-1,endAt:0,win:-1,foul:-1,wins:[0,0],best:null};hist=[];$("log").innerHTML="";log("Reset: scores 0 - 0");render()}
+function nextL(){for(let i=0;i<8;i++){const b=(lf>>7^lf>>5^lf>>4^lf>>3)&1;lf=((lf<<1)|b)&255}return lf}
+function start(){if(s.st==1||s.st==2)return;s.t=[null,null];s.lock=[0,0];s.first=-1;s.win=-1;s.foul=-1;s.cnt=0;const l=nextL();s.delay=2000+Math.round(l/255*3000);s.tw=performance.now();s.st=1;log("start = 1: lfsr = "+bn(l,8)+" → random delay "+s.delay+" ms → WAIT");render()}
+function finish(){if(s.st!=2)return;const [a,b]=s.t;
+ if(a===null&&b===null){s.win=-1;log("timeout: nobody pressed")}
+ else{s.win=b===null||(a!==null&&a<b)?0:(a===null||b<a?1:-1);
+  if(s.win>=0){s.wins[s.win]++;const bt=s.t[s.win];if(s.best===null||bt<s.best)s.best=bt;log("comparator: t1 = "+(a===null?"--":a)+", t2 = "+(b===null?"--":b)+" → Player "+(s.win+1)+" wins")}else log("comparator: equal times → draw")}
+ s.st=3;render()}
+function press(p){const now=performance.now(),el=$("p"+p);el.classList.add("dn");setTimeout(()=>el.classList.remove("dn"),140);
+ if(s.st==1){s.st=4;s.foul=p;s.win=1-p;s.wins[1-p]++;log("Player "+(p+1)+" pressed during WAIT → FOUL: Player "+(2-p)+" wins");render();return}
+ if(s.st==2&&!s.lock[p]){const t=Math.round(now-s.t0);s.t[p]=t;s.lock[p]=1;log("Player "+(p+1)+" pressed: t"+(p+1)+" = "+t+" ms (register locked)");
+  if(s.first<0){s.first=p;s.endAt=now+1200}if(s.lock[0]&&s.lock[1])finish();else render();return}
+ log("Player "+(p+1)+" pressed: ignored in state "+ST[s.st])}
+function tick(){const now=performance.now();
+ if(s.st==1&&now-s.tw>=s.delay){s.st=2;s.t0=now;s.cnt=0;log("timer == delay → GO (green light, counter starts)");render()}
+ else if(s.st==2){s.cnt=Math.round(now-s.t0);if((s.first>=0&&now>=s.endAt)||s.cnt>3000)finish()}}
+function render(){
+ const L={lr:s.st==1||s.st==4,ly:s.st==0||s.st==3,lg:s.st==2};for(const k in L)$(k).classList.toggle("on",L[k]);
+ $("dev").classList.toggle("foul",s.st==4);
+ const msg=["READY — press Start","WAIT… don't press!","GO!",s.win>=0?"🏆 PLAYER "+(s.win+1)+" WINS!":(s.win==-1&&s.t[0]===null&&s.t[1]===null?"NO ONE PRESSED":"DRAW"),"FALSE START by Player "+(s.foul+1)][s.st];
+ $("lcd").innerHTML=msg+`<b>${String(s.cnt).padStart(4,"0")} ms</b>`;
+ [0,1].forEach(p=>$("c"+p).classList.toggle("run",s.t[p]!==null));
+ $("st").disabled=s.st==1||s.st==2;
+ $("score").innerHTML=`<div class="chip"><small>P1 wins</small>${s.wins[0]}</div><div class="chip"><small>P2 wins</small>${s.wins[1]}</div><div class="chip"><small>Best time</small>${s.best===null?"--":s.best+" ms"}</div>`;
+ $("rs").innerHTML=(s.st>=3?`Player 1: <b>${s.t[0]===null?"--":s.t[0]+" ms"}</b> &nbsp; Player 2: <b>${s.t[1]===null?"--":s.t[1]+" ms"}</b>`:"Round not finished.");
+ const sg=[["state[2:0]",bn(s.st,3)+" "+ST[s.st]],["lfsr[7:0]",bn(lf,8)],["delay (ms)",s.delay],["counter[15:0]","0x"+s.cnt.toString(16).toUpperCase().padStart(4,"0")+" ("+s.cnt+")"],["t1 / t2",(s.t[0]===null?"--":s.t[0])+" / "+(s.t[1]===null?"--":s.t[1])],["lock1 lock2",s.lock[0]+" "+s.lock[1]],["foul",s.st==4?1:0],["winner",s.win<0?"--":"P"+(s.win+1)]];
+ $("sig").innerHTML=sg.map(([n,v])=>`<div class="chip ${(n=="foul"&&v)?"bad":""}"><small>${n}</small>${v}</div>`).join("");
+ $("vc").innerHTML=V.map(([n,c],i)=>`<div class="ln ${i==s.st?"cur":""}"><b>${n}:</b><span style="width:auto">${c}</span></div>`).join("")}
+function wave(){const cv=$("wv"),w=cv.clientWidth,h=110,r=devicePixelRatio||1;cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);
+ const st=getComputedStyle(document.documentElement),ac=st.getPropertyValue("--ac"),mu=st.getPropertyValue("--mut");g.font="10px monospace";
+ ["go","p1","p2","foul"].forEach((n,i)=>{const y0=6+i*26;g.fillStyle=mu;g.fillText(n,0,y0+14);g.strokeStyle=ac;g.lineWidth=2;g.beginPath();
+  hist.forEach((v,j)=>{const x=36+j*(w-44)/100,y=v[i]?y0:y0+18;j?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()})}
+setInterval(tick,10);setInterval(()=>{hist.push([s.st==2?1:0,s.lock[0],s.lock[1],s.st==4?1:0]);if(hist.length>100)hist.shift();render();wave()},60);
+$("p0").onclick=()=>press(0);$("p1").onclick=()=>press(1);$("st").onclick=start;$("rst").onclick=reset;
+document.addEventListener("keydown",e=>{if(e.repeat)return;const k=e.key.toLowerCase();if(k=="a"){press(0);e.preventDefault()}else if(k=="l"){press(1);e.preventDefault()}else if(k==" "&&document.activeElement.tagName!="BUTTON"){start();e.preventDefault()}});
+async function play(i){reset();const my=++tok;const h={W:ms=>new Promise((r,j)=>setTimeout(()=>my==tok?r():j("stop"),ms)),U:async f=>{while(!f())await h.W(40)}};
+ try{for(const [say,fn] of DEMOS[i][1]){$("say").textContent=say;await fn(h);await h.W(900)}$("say").textContent="✔ Demo finished. Try another use case, or play with keys A and L."}catch(e){}}
+const react=async(h,a,b)=>{const f=a<b?0:1,lo=Math.min(a,b),hi=Math.max(a,b);await h.W(lo);press(f);await h.W(hi-lo);press(1-f)};
+const DEMOS=[
+["🏁 Normal round",[["Press Start: the LFSR makes a random delay and the FSM goes to WAIT (red light).",async h=>{start();await h.U(()=>s.st==2)}],["GO! Player 1 reacts in about 230 ms, Player 2 in about 300 ms. Each press freezes the counter in that player's register.",async h=>{await react(h,230,300);await h.U(()=>s.st==3)}],["The comparator checks t1 < t2, so Player 1 wins. Player 1's car crosses the line first.",async h=>{}]]],
+["🚫 False start",[["Start round: red light, the FSM is in WAIT.",async h=>start()],["Player 2 presses too early. The foul logic (press AND state == WAIT) goes to FOUL, so Player 1 wins.",async h=>{await h.W(900);press(1)}]]],
+["📏 Very close finish",[["Start round.",async h=>{start();await h.U(()=>s.st==2)}],["Both players react almost together: about 240 ms and 280 ms. The comparator still picks the winner.",async h=>{await react(h,240,280);await h.U(()=>s.st==3)}],["Player 1 wins by about 40 ms. The counter has 1 ms resolution, which is why a counter register is used.",async h=>{}]]],
+["🏆 Best of 3",[["Three rounds are played. The scoreboard keeps the wins.",async h=>{const R=[[230,280],[270,215],[240,300]];for(let n=0;n<3;n++){$("say").textContent="Round "+(n+1)+" of 3...";start();await h.U(()=>s.st==2);await react(h,R[n][0],R[n][1]);await h.U(()=>s.st==3);await h.W(1500)}}],["Result: Player 1 wins the match 2 - 1.",async h=>{}]]]];
+$("demo").innerHTML=DEMOS.map((d,i)=>`<button data-i="${i}">${d[0]}</button>`).join("")+'<button id="stop">⏹ Stop</button>';
+$("demo").onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.id=="stop"){tok++;$("say").textContent="Demo stopped.";return}play(+b.dataset.i)};
+reset();
+</script></body></html>
